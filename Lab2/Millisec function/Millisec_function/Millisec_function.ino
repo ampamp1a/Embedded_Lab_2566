@@ -1,5 +1,5 @@
 /* Millisec function */
-const int SW1 = 4; // Port SDA1 Pin IO4
+const int SW1 = 16; // Port SDA1 Pin IO16
 
 /* Reference KidBright Board:
    https://kidbright.info/files/Sch_KidBright32%20V1.3.pdf */
