@@ -1,5 +1,5 @@
 /* Millisec function */
-const int SW1 = 16; // Port SDA1 Pin IO16
+const int SW1 = 4; // Port SDA1 Pin IO4
 
 /* Reference KidBright Board:
    https://kidbright.info/files/Sch_KidBright32%20V1.3.pdf */
@@ -20,9 +20,9 @@ void loop() {
 
   if ((buttonStatus_1 == LOW) && (State_counter == 0)) {
     State_counter = 1;
-    counter_start = millis();
+    counter_start = micros();
   } else if ((buttonStatus_1 == HIGH) && (State_counter == 1)) {
-    counter_stop = millis();
+    counter_stop = micros();
     time_capture = counter_stop - counter_start;
 
     Serial.print("Low level Time capture = ");
