@@ -20,9 +20,9 @@ void loop() {
 
   if ((buttonStatus_1 == LOW) && (State_counter == 0)) {
     State_counter = 1;
-    counter_start = micros();
+    counter_start = millis();
   } else if ((buttonStatus_1 == HIGH) && (State_counter == 1)) {
-    counter_stop = micros();
+    counter_stop = millis();
     time_capture = counter_stop - counter_start;
 
     Serial.print("Low level Time capture = ");
