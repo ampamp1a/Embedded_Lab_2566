@@ -8,7 +8,7 @@ volatile int time_capture = 0;
 
 void setup() {
   Serial.begin(115200);
-  pinMode(echo, INPUT_PULLDOWN); // สั่งให้ขา echo ใช้งานเป็น input
+  pinMode(echo, INPUT_PULLUP); // สั่งให้ขา echo ใช้งานเป็น input
   pinMode(trig, OUTPUT); // สั่งให้ขา trig ใช้งานเป็น output
   attachInterrupt(digitalPinToInterrupt(echo), echo_change, CHANGE); // ตั้งค่า interrupt ที่ขา echo
 }
@@ -21,22 +21,22 @@ void echo_change() {
   } 
   else if ((echoStatus == LOW) && (State_counter == 1 )) {
     counter_stop = micros();
-    time_capture = counter_stop - counter_start;
-    unsigned long distance = (time_capture / 2) / 29.1; // คำนวณเป็น centimeters
-
-    Serial.print(distance);
-    Serial.print(" cm\n");
     State_counter = 0;
+    
   }
+
 }
 
 void loop() {
   digitalWrite(trig, LOW);
-  delayMicroseconds(5);
+  delayMicroseconds(2);
   digitalWrite(trig, HIGH);
-  delayMicroseconds(5);
+  delayMicroseconds(10);
   digitalWrite(trig, LOW); // ใช้งานขา trig
-  
+  time_capture = counter_stop - counter_start;
+  unsigned long distance = (time_capture / 2) / 29.1; // คำนวณเป็น centimeters
+  Serial.print(distance);
+  Serial.print(" cm\n");
   delay(1000);
 
 }
