@@ -26,6 +26,7 @@ void get_value(String value) {
 
   if (sscanf(value.c_str(), "address: %x data address: %x %x data length: %x %x",&address,&dataAdd1,&dataAdd2,&dataLen1,&dataLen2) == 5) {
     //seperate to keep data for packet
+
     // show value each data for keep packet
     Serial.print("Address: ");
     Serial.println(address,HEX);
@@ -34,7 +35,8 @@ void get_value(String value) {
     Serial.println(dataAdd2,HEX);
     Serial.print("Data length: ");
     Serial.print(dataLen1,HEX);
-    Serial.println(dataLen2,HEX);   
+    Serial.println(dataLen2,HEX);  
+
     // keep data in packet to sent for calculate crc
         packet[0] = address & 0xFF; //address
         packet[1] = 0x03; // Function code
@@ -42,6 +44,7 @@ void get_value(String value) {
         packet[3] = dataAdd2 & 0xFF; //dataAdd2
         packet[4] = dataLen1 & 0xFF; //dataLen1
         packet[5] = dataLen2 & 0xFF; //dataLen2
+        
     crc = MODBUS_CRC16_v1(packet,6); // sent packet for calculate crc 
     crc1 = crc & 0xFF;  // LSB
     crc2 = (crc >> 8) & 0xFF; // MSB
@@ -54,13 +57,11 @@ void get_value(String value) {
         packet1[5] = packet[5]; //dataLen2
         packet1[6] = crc1;
         packet1[7] = crc2;
-
     ready = 1;
 
   } else {
     Serial.println("Invalid Format");
   }
-
 }
 
 static uint16_t MODBUS_CRC16_v1( const unsigned char *buf, unsigned int len )
