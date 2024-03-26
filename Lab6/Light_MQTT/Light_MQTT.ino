@@ -3,11 +3,11 @@
 #include <PubSubClient.h>
 
 // replace with your wifi ssid and wpa2 key
-const char* ssid = "yaikaew";
-const char* pass = "123456789";
+const char* ssid = "narest_2.4G";
+const char* pass = "narest6552";
 
 const char* server = "mqtt3.thingspeak.com";
-const char* channelID = "HDglEwcQBBERBg8iCAEYDiw";
+const char* channelID = "2456023"; 
 const char* mqttUserName = SECRET_MQTT_USERNAME;
 const char* mqttPass = SECRET_MQTT_PASSWORD;
 const char* clientID = SECRET_MQTT_CLIENT_ID;

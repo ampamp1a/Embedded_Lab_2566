@@ -10,8 +10,8 @@
 // #define WIFI_PASSWORD "Tip3456N"    // ป้อนรหัส WiFi ที่ต้องการเชื่อมต่อ
 // #define WIFI_NAME "Hi"        // ป้อนชื่อ WiFi ที่ต้องการเชื่อมต่อ
 // #define WIFI_PASSWORD "nathamon"    // ป้อนรหัส WiFi ที่ต้องการเชื่อมต่อ
-#define WIFI_NAME "yaikaew"        // ป้อนชื่อ WiFi ที่ต้องการเชื่อมต่อ
-#define WIFI_PASSWORD "123456789"    // ป้อนรหัส WiFi ที่ต้องการเชื่อมต่อ
+#define WIFI_NAME "narest_2.4G"        // ป้อนชื่อ WiFi ที่ต้องการเชื่อมต่อ
+#define WIFI_PASSWORD "narest6552"    // ป้อนรหัส WiFi ที่ต้องการเชื่อมต่อ
 int analog_value = 0;
 double temp = 0;
 String server = "api.thingspeak.com";

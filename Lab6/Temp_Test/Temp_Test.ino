@@ -7,14 +7,14 @@
 #define I2C_ADDR 0x4D
 
 // replace with your wifi ssid and wpa2 key
-const char *ssid = "yaikaew";
-const char *pass = "123456789";
+const char *ssid = "narest_2.4G";
+const char *pass = "narest6552";
 
 // Domain Name with full URL Path for HTTP POST Request
 const char* serverName = "http://api.thingspeak.com/update";
 
 // Service API Key
-String apiKey = "XB8CO61PPXNH4Y1P";
+String apiKey = "GCUGPBJNMAQOPI31"; //Write API Key
 
 float Temp_value ;
 
