@@ -8,28 +8,34 @@
 
 #include <WiFi.h>
 #include <PubSubClient.h>
-
-// const char *ssid = "Model"; 
-// const char *password = "Model@12345";
-const char *ssid = "narest_2.4G"; 
-const char *password = "narest6552";
+const char *ssid = "Model"; 
+const char *password = "Model@12345";
+//const char *ssid = "narest_2.4G"; 
+//const char *password = "narest6552";
 
 const char *mqtt_broker = "broker.hivemq.com"; 
 const char *topic_set = "test_time";
+const char *topic_feednow = "feed_now_amp_bew";
 const char *topic_temp = "temp_amp_bew";
 const char *topic_pressure = "pressure_amp_bew";
 const char *topic_time = "time_amp_bew";
+
+//keep for sent to mqtt
+char tempkeep[10];
+char pressurekeep[10];
 char timenow[60];
 int hournow;
 int minnow;
 String timeunit;
 
+//for communicate with mqtt
 const int mqtt_port = 1883;
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-char tempkeep[10];
-char pressurekeep[10];
+//receive message from mqtt
+String message;
+String message2;
 //knob
 static const int servoPin (22);
 Servo servo1;
@@ -42,14 +48,16 @@ int posDegrees = 0;
 #define BMP_CS   (19)
 Adafruit_BMP280 bmp(BMP_CS, BMP_MOSI, BMP_MISO,  BMP_SCK);
 
+//For feed now
+#define mannualfeed (14)
+
+//set time to feed
 int c_hour ;
 int c_minute;
 int c_sec;
-
 int set_hour;
 int set_minute;
 int set_sec;
-String message;
 
 String day_week[7] = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday","Sunday"};
 String month_name[12] = {"January","Febuary","March","April","May","June","July","August","September","October","November","December"};
@@ -73,53 +81,41 @@ void setDayAndStart(
   int hour,
   int minute,
   int second
-) {
+  ) {
+      Wire.beginTransmission(I2C_ADDR);
+      Wire.write(0); // select 00h second register
+      Wire.write((decToBcd(second) & 0x7f) | 0x80);
+      Wire.write(decToBcd(minute) & 0x7f);
+      Wire.write(decToBcd(hour) & 0x3f);
+      Wire.write(decToBcd(day_w) & 0x07);
+      Wire.write(decToBcd(day_no) & 0x3f);
+      Wire.write(decToBcd(month) & 0x1f);
+      Wire.write(decToBcd(year));
+      Wire.endTransmission();
+    }
+
+void Showday() {
     Wire.beginTransmission(I2C_ADDR);
-    Wire.write(0); // select 00h second register
-    Wire.write((decToBcd(second) & 0x7f) | 0x80);
-    Wire.write(decToBcd(minute) & 0x7f);
-    Wire.write(decToBcd(hour) & 0x3f);
-    Wire.write(decToBcd(day_w) & 0x07);
-    Wire.write(decToBcd(day_no) & 0x3f);
-    Wire.write(decToBcd(month) & 0x1f);
-    Wire.write(decToBcd(year));
+    Wire.write(0);  // select 00h second register
     Wire.endTransmission();
+    Wire.requestFrom(I2C_ADDR, 7);
+    int *second, *minute, *hour, *day_w, *day_no, *month, *year;
+    *second     = bcdToDec(Wire.read() & 0x7f);
+    *minute     = bcdToDec(Wire.read() & 0x7f);
+    *hour       = bcdToDec(Wire.read() & 0x3f);
+    *day_w      = bcdToDec(Wire.read() & 0x07);
+    *day_no     = bcdToDec(Wire.read() & 0x3f);
+    *month      = bcdToDec(Wire.read() & 0x1f);
+    *year       = Wire.read() ;
+    sprintf(Realtime, "%s %d/%s/%d %d:%d:%d", day_week[*day_w - 1].c_str(), *day_no, month_name[*month-1].c_str(), bcdToDec(*year), *hour, *minute, *second);
+    c_hour = *hour;
+    c_minute = *minute;
+    c_sec = *second;
+    Serial.println(Realtime);
+    changetime();
+    sprintf(timenow, "%s %d/%s/%d %d:%d:%d %s", day_week[*day_w - 1].c_str(), *day_no, month_name[*month-1].c_str(), bcdToDec(*year), hournow, minnow,*second,timeunit);
+    client.publish(topic_time, timenow);
   }
-
-
-void Showday(
-) {
-  Wire.beginTransmission(I2C_ADDR);
-  Wire.write(0);  // select 00h second register
-  Wire.endTransmission();
-  Wire.requestFrom(I2C_ADDR, 7);
-  int *second, *minute, *hour, *day_w, *day_no, *month, *year;
-  *second     = bcdToDec(Wire.read() & 0x7f);
-  *minute     = bcdToDec(Wire.read() & 0x7f);
-  *hour       = bcdToDec(Wire.read() & 0x3f);
-  *day_w      = bcdToDec(Wire.read() & 0x07);
-  *day_no     = bcdToDec(Wire.read() & 0x3f);
-  *month      = bcdToDec(Wire.read() & 0x1f);
-  *year       = Wire.read() ;
-  sprintf(Realtime, "%s %d/%s/%d %d:%d:%d", day_week[*day_w - 1].c_str(), *day_no, month_name[*month-1].c_str(), bcdToDec(*year), *hour, *minute, *second);
-  c_hour = *hour;
-  c_minute = *minute;
-  c_sec = *second;
-  Serial.println(Realtime);
-  changetime();
-  // if (c_hour >= 12){
-  //     timeunit = "PM";
-  //     hournow = c_hour % 12;
-  //     minnow = c_minute;
-  // }
-  // else{
-  //   timeunit = "AM";
-  //   hournow = c_hour;
-  //   minnow = c_minute;
-  // }
-  sprintf(timenow, "%s %d/%s/%d %d:%d:%d %s", day_week[*day_w - 1].c_str(), *day_no, month_name[*month-1].c_str(), bcdToDec(*year), hournow, minnow,*second,timeunit);
-  client.publish(topic_time, timenow);
-}
 void changetime(){
   if (c_hour >= 12){
       timeunit = "PM";
@@ -135,18 +131,20 @@ void changetime(){
   client.publish(topic_time, timenow);
 }
 
+// motor feed
 void knob(){
-    for(int posDegrees = 0; posDegrees <= 180; posDegrees++) {
+    for(int posDegrees = 0; posDegrees <= 45; posDegrees++) {
       servo1.write(posDegrees);
       delay(20);
     }
-    delay(1000);
+    delay(3000);
     posDegrees = 0;    
-    for(int posDegrees = 180; posDegrees >= 0; posDegrees--) {
+    for(int posDegrees = 45; posDegrees >= 0; posDegrees--) {
       servo1.write(posDegrees);
       delay(20);
     }
-}
+  }
+
 void ReadTempandSent(){
   Serial.print(F("Temperature = "));
   float tempfloat = bmp.readTemperature();
@@ -179,13 +177,22 @@ void set_feed() {
   set_minute = parts[1].toInt();
   set_sec = parts[2].toInt();
 }
-
-void callback(char *topic_set, byte *payload, unsigned int length) {
+//recieve time for set to feed from mqtt
+void callback(char *topic_for_set, byte *payload, unsigned int length) {
   message = "";
   for (int i = 0; i < length; i++) {
     message += (char)payload[i];
   }
-  Serial.println(message);
+  if (strcmp(topic_for_set,"test_time")== 0){
+      Serial.println(message);
+      set_feed();//set time to feed
+  }
+  else if(strcmp(topic_for_set,"feed_now_amp_bew")== 0){
+   Serial.println(message);
+    if (message = "feed"){
+      knob();
+    }   
+  }
 
 }
 
@@ -201,7 +208,7 @@ void connectWiFi() {
 void connect_mq() {
   client.setServer(mqtt_broker, mqtt_port);
   client.setCallback(callback);
-
+  //client.setCallback(callback2);
   while (!client.connected()) {
     String client_id = "esp8266-client-";
     client_id += String(WiFi.macAddress());
@@ -219,17 +226,18 @@ void connect_mq() {
 
   //client.publish(topic_temp, "connected already");
   client.subscribe(topic_set);
+  client.subscribe(topic_feednow);
 }
 
-
 void setup() {
-
   Wire.begin(4, 5);
   Serial.begin(9600);
-  setDayAndStart(7,31,12,23,23,59,50);//Sunday,31,December,23,23,59,50
-  // Serial.println("fomate time set = <day_w, day_no, month, year, hour, minute, second>");
-  servo1.attach(servoPin);
 
+  setDayAndStart(7,31,12,23,23,50,50);//Sunday,31,December,23,23,50,50
+
+  servo1.attach(servoPin);//connect Pin for sent signal to servo motor
+
+  //connect to BMP280 sensor
   while ( !Serial ) delay(100);   // wait for native usb
   Serial.println(F("BMP280 test"));
   unsigned status;
@@ -244,29 +252,36 @@ void setup() {
     Serial.print("        ID of 0x61 represents a BME 680.\n");
     while (1) delay(10);
   }
-
   /* Default settings from datasheet. */
   bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
                   Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
                   Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
                   Adafruit_BMP280::FILTER_X16,      /* Filtering. */
                   Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */  
+  //connect mqtt
   connectWiFi();
-  connect_mq();
-  
+  connect_mq(); 
 }
 
 void loop() {
-  client.loop();
+  //feed now when put switch2
+  if( digitalRead(mannualfeed) == LOW){
+    Serial.println("Feed now");
+    knob();
+    Serial.println("EAT");
+  }  
+  client.loop(); //call mqtt always
   Showday();
 
+  //check time for feed
   if ( c_hour == set_hour && c_minute == set_minute && c_sec == 0) {
     knob();
     Serial.println("EAT");
   }
+
   delay(1000);
-  set_feed();
   
-  ReadTempandSent();
+  ReadTempandSent();//call read temp
+
   Serial.println();
 }
