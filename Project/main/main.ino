@@ -6,6 +6,9 @@
 #include <SPI.h>
 #include <Adafruit_BMP280.h>
 
+#include <TridentTD_LineNotify.h>
+#define LINE_TOKEN "BDbMBLC8gL3LtxNYrQuHtuTO2QHZD02W1La4xRgbB2G" 
+
 #include <WiFi.h>
 #include <PubSubClient.h>
 const char *ssid = "Model"; 
@@ -117,19 +120,18 @@ void Showday() {
     client.publish(topic_time, timenow);
   }
 void changetime(){
-  if (c_hour >= 12){
-      timeunit = "PM";
-      hournow = c_hour % 12;
+    if (c_hour >= 12){
+        timeunit = "PM";
+        hournow = c_hour % 12;
+        minnow = c_minute;
+    }
+    else{
+      timeunit = "AM";
+      hournow = c_hour;
       minnow = c_minute;
+    }
+    client.publish(topic_time, timenow);
   }
-  else{
-    timeunit = "AM";
-    hournow = c_hour;
-    minnow = c_minute;
-  }
-  //sprintf(timenow, "%s %d/%s/%d %d:%d %s", day_week[*day_w - 1].c_str(), *day_no, month_name[*month-1].c_str(), bcdToDec(*year), hournow, minnow,timeunit);
-  client.publish(topic_time, timenow);
-}
 
 // motor feed
 void knob(){
@@ -143,6 +145,7 @@ void knob(){
       servo1.write(posDegrees);
       delay(20);
     }
+    LINE.notify("ให้อาหารเรียบร้อย");
   }
 
 void ReadTempandSent(){
@@ -152,6 +155,10 @@ void ReadTempandSent(){
   Serial.print(tempkeep);
   Serial.println(" *C");
   client.publish(topic_temp, tempkeep);
+
+  if(tempfloat > 30){
+    LINE.notify("อากาศร้อน น้องมอมแมมร้อนแล้วค้าบ" + String(tempfloat, 2) + "C");
+  }
 
   Serial.print(F("Pressure = "));
   float pressurefloat = bmp.readPressure();
@@ -261,6 +268,7 @@ void setup() {
   //connect mqtt
   connectWiFi();
   connect_mq(); 
+  LINE.setToken(LINE_TOKEN);
 }
 
 void loop() {
