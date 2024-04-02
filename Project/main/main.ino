@@ -11,10 +11,10 @@
 
 #include <WiFi.h>
 #include <PubSubClient.h>
-const char *ssid = "Model"; 
-const char *password = "Model@12345";
-//const char *ssid = "narest_2.4G"; 
-//const char *password = "narest6552";
+//const char *ssid = "Model"; 
+//const char *password = "Model@12345";
+const char *ssid = "narest_2.4G"; 
+const char *password = "narest6552";
 
 const char *mqtt_broker = "broker.hivemq.com"; 
 const char *topic_set = "test_time";
@@ -30,7 +30,7 @@ char timenow[60];
 int hournow;
 int minnow;
 String timeunit;
-
+String realtime_list[60];
 //for communicate with mqtt
 const int mqtt_port = 1883;
 WiFiClient espClient;
@@ -186,23 +186,53 @@ void set_feed() {
 }
 //recieve time for set to feed from mqtt
 void callback(char *topic_for_set, byte *payload, unsigned int length) {
+
   message = "";
   for (int i = 0; i < length; i++) {
     message += (char)payload[i];
   }
+  Serial.println(topic_for_set);
   if (strcmp(topic_for_set,"test_time")== 0){
       Serial.println(message);
       set_feed();//set time to feed
   }
-  else if(strcmp(topic_for_set,"feed_now_amp_bew")== 0){
+  if(strcmp(topic_for_set,"feed_now_amp_bew")== 0 ){
    Serial.println(message);
     if (message = "feed"){
       knob();
+
     }   
+
+  if(strcmp(topic_for_set,"real_time_amp_bew")== 0){
+    Serial.println(message);
+    //2024-2-31-0 22:34:31//year-(month-1)-day-day(week) hour:min:sec
+    int i = 0;
+    int startIndex = 0;
+    int endIndex = message.indexOf('-');
+
+    while (endIndex != -1) {
+      realtime_list[i++] = message.substring(startIndex, endIndex);
+      startIndex = endIndex + 1;
+      endIndex = message.indexOf('-', startIndex);
+    }
+    //sprintf(realtime_list, "%s-%s-%s-%s %s:%s:%s", message);
+    //setDayAndStart(realtime_list[3].toInt(),realtime_list[2].toInt(),realtime_list[1].toInt(),realtime_list[0].toInt(),realtime_list[4].toInt(),realtime_list[5].toInt(),realtime_list[6].toInt());//Sunday,31,December,23,23,50,50
+    for (int i = 0; i < length; i++){
+      realtime_list[i] = realtime_list[i].toInt();
+      Serial.println(realtime_list[i]);
+    }
+    //setDayAndStart(realtime_list[3].toInt(),realtime_list[2].toInt(),realtime_list[1].toInt(),realtime_list[0].toInt(),realtime_list[4].toInt(),realtime_list[5].toInt(),realtime_list[6].toInt());
+    //setDayAndStart(7,31,12,23,23,50,50);//Sunday,31,December,23,23,50,50
+    start_time();
+
   }
 
+  }
+  
 }
-
+void start_time(){
+   setDayAndStart(realtime_list[3].toInt(),realtime_list[2].toInt(),realtime_list[1].toInt(),realtime_list[0].toInt(),realtime_list[4].toInt(),realtime_list[5].toInt(),realtime_list[6].toInt());
+}
 void connectWiFi() {
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
@@ -234,16 +264,12 @@ void connect_mq() {
   //client.publish(topic_temp, "connected already");
   client.subscribe(topic_set);
   client.subscribe(topic_feednow);
+  client.subscribe("real_time_amp_bew");
 }
 
 void setup() {
   Wire.begin(4, 5);
   Serial.begin(9600);
-
-  setDayAndStart(7,31,12,23,23,50,50);//Sunday,31,December,23,23,50,50
-
-  servo1.attach(servoPin);//connect Pin for sent signal to servo motor
-
   //connect to BMP280 sensor
   while ( !Serial ) delay(100);   // wait for native usb
   Serial.println(F("BMP280 test"));
@@ -267,7 +293,14 @@ void setup() {
                   Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */  
   //connect mqtt
   connectWiFi();
-  connect_mq(); 
+  connect_mq();
+  // if (start == 0){
+  //   setDayAndStart(7,31,12,23,23,50,50);
+  // } 
+  //setDayAndStart(7,31,12,23,23,50,50);//Sunday,31,December,23,23,50,50
+
+  servo1.attach(servoPin);//connect Pin for sent signal to servo motor
+  servo1.write(0);
   LINE.setToken(LINE_TOKEN);
 }
 
