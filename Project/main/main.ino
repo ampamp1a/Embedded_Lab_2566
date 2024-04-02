@@ -202,7 +202,7 @@ void callback(char *topic_for_set, byte *payload, unsigned int length) {
       knob();
 
     }   
-
+  }
   if(strcmp(topic_for_set,"real_time_amp_bew")== 0){
     Serial.println(message);
     //2024-2-31-0 22:34:31//year-(month-1)-day-day(week) hour:min:sec
@@ -229,7 +229,7 @@ void callback(char *topic_for_set, byte *payload, unsigned int length) {
 
   }
   
-}
+
 void start_time(){
    setDayAndStart(realtime_list[3].toInt(),realtime_list[2].toInt(),realtime_list[1].toInt(),realtime_list[0].toInt(),realtime_list[4].toInt(),realtime_list[5].toInt(),realtime_list[6].toInt());
 }
